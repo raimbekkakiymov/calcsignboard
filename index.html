@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Калькулятор вывески v12.0</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            padding: 16px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: #2c3e50;
+        }
+
+        .settings-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .settings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .setting-item {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .setting-item label {
+            font-weight: 600;
+            font-size: 14px;
+            color: #2c3e50;
+        }
+
+        .setting-item select, .setting-item input {
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            background: white;
+            cursor: pointer;
+        }
+
+        .setting-item select:focus, .setting-item input:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        .switch-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 26px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .3s;
+            border-radius: 26px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #27ae60;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(24px);
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            margin: 20px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 600px;
+        }
+
+        th {
+            background: #3498db;
+            color: white;
+            padding: 12px;
+            font-size: 13px;
+            text-align: center;
+        }
+
+        td {
+            padding: 8px;
+            text-align: center;
+            border-bottom: 1px solid #eee;
+        }
+
+        input[type="number"] {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 14px;
+            width: 70px;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s;
+            margin: 5px;
+        }
+
+        .btn-add {
+            background: #27ae60;
+            color: white;
+        }
+
+        .btn-add:hover {
+            background: #219a52;
+        }
+
+        .btn-delete {
+            background: #e74c3c;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-send {
+            background: #3498db;
+            color: white;
+            margin-top: 20px;
+            width: 100%;
+        }
+
+        .btn-send:hover {
+            background: #2980b9;
+        }
+
+        .totals {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+        }
+
+        .totals h3 {
+            margin-bottom: 15px;
+            color: #2c3e50;
+        }
+
+        .total-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .total-item {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .total-label {
+            font-size: 12px;
+            color: #7f8c8d;
+            margin-bottom: 5px;
+        }
+
+        .total-value {
+            font-size: 22px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .substrate-size-section {
+            display: none;
+            margin-top: 10px;
+            padding: 15px;
+            background: #e8f4f8;
+            border-radius: 6px;
+        }
+
+        .substrate-size-section.active {
+            display: block;
+        }
+
+        .substrate-size-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📐 Калькулятор вывески v12.0</h1>
+        
+        <!-- Настройки сверху -->
+        <div class="settings-section">
+            <h3 style="margin-bottom: 15px;">⚙️ Настройки материалов</h3>
+            <div class="settings-grid">
+                <div class="setting-item">
+                    <label>Нужны диоды?</label>
+                    <div class="switch-container">
+                        <label class="switch">
+                            <input type="checkbox" id="needLED" checked onchange="updateAll()">
+                            <span class="slider"></span>
+                        </label>
+                        <span id="ledStatus">Да</span>
+                    </div>
+                </div>
+                
+                <div class="setting-item" id="ledTypeSection">
+                    <label>Тип диодов:</label>
+                    <select id="ledType" onchange="updateAll()">
+                        <option value="3point">3-х точечные (0.72W)</option>
+                        <option value="1point">1-но точечные (0.24W)</option>
+                        <option value="4point">4-х точечные (0.96W)</option>
+                    </select>
+                </div>
+                
+                <div class="setting-item">
+                    <label>Материал лицевой части:</label>
+                    <select id="faceMaterial" onchange="updateAll()">
+                        <option value="acrylic">Акрил</option>
+                        <option value="pvc">ПВХ</option>
+                        <option value="akp">АКП (алюмокомпозит)</option>
+                        <option value="orglass">Оргстекло</option>
+                    </select>
+                </div>
+                
+                <div class="setting-item">
+                    <label>Материал бортов:</label>
+                    <select id="sideMaterial" onchange="updateAll()">
+                        <option value="acrylic">Акрил</option>
+                        <option value="orglass">Оргстекло</option>
+                        <option value="pvc">ПВХ</option>
+                        <option value="akp">АКП (алюмокомпозит)</option>
+                    </select>
+                </div>
+                
+                <div class="setting-item">
+                    <label>Задник (задняя часть):</label>
+                    <select id="backMaterial" onchange="updateAll()">
+                        <option value="none">Нет</option>
+                        <option value="pvc_8mm">ПВХ 8мм</option>
+                        <option value="pvc_5mm">ПВХ 5мм</option>
+                        <option value="pvc_3mm">ПВХ 3мм</option>
+                    </select>
+                </div>
+                
+                <div class="setting-item">
+                    <label>Подложка:</label>
+                    <select id="substrateMaterial" onchange="toggleSubstrateSize()">
+                        <option value="none">Нет</option>
+                        <option value="pvc">ПВХ</option>
+                        <option value="galvanized">Оцинкованный лист</option>
+                        <option value="akp">АКП (алюмокомпозит)</option>
+                    </select>
+                </div>
+                
+                <div class="setting-item">
+                    <label>Тип установки:</label>
+                    <select id="mountType" onchange="updateAll()">
+                        <option value="facade">На фасад (стену)</option>
+                        <option value="roof">На крышу</option>
+                    </select>
+                </div>
+                
+                <div class="setting-item">
+                    <label>Обклейка бортов:</label>
+                    <div class="switch-container">
+                        <label class="switch">
+                            <input type="checkbox" id="sideWrap" onchange="updateAll()">
+                            <span class="slider"></span>
+                        </label>
+                        <span id="sideWrapStatus">Нет</span>
+                    </div>
+                </div>
+                
+                <div class="setting-item">
+                    <label>Обклейка лицевой части:</label>
+                    <div class="switch-container">
+                        <label class="switch">
+                            <input type="checkbox" id="faceWrap" onchange="updateAll()">
+                            <span class="slider"></span>
+                        </label>
+                        <span id="faceWrapStatus">Нет</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Размеры подложки -->
+            <div class="substrate-size-section" id="substrateSizeSection">
+                <h4 style="margin-bottom: 10px;">📏 Размеры подложки</h4>
+                <div class="substrate-size-grid">
+                    <div class="setting-item">
+                        <label>Ширина (см):</label>
+                        <input type="number" id="substrateWidth" value="0" min="0" max="1000" oninput="updateAll()">
+                    </div>
+                    <div class="setting-item">
+                        <label>Высота (см):</label>
+                        <input type="number" id="substrateHeight" value="0" min="0" max="1000" oninput="updateAll()">
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Таблица с буквами -->
+        <div class="table-wrapper">
+            <table id="calcTable">
+                <thead>
+                    <tr>
+                        <th>№</th>
+                        <th>Ширина (см)</th>
+                        <th>Высота (см)</th>
+                        <th>Количество</th>
+                        <th>Борт (мм)</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <!-- Строки добавляются динамически -->
+                </tbody>
+            </table>
+        </div>
+        
+        <div style="text-align: center;">
+            <button class="btn btn-add" onclick="addRow()">+ Добавить размер</button>
+        </div>
+        
+        <!-- Результаты расчета -->
+        <div class="totals" id="totalsSection">
+            <h3>📊 РАСЧЕТ</h3>
+            <div class="total-grid" id="totalsGrid">
+                <!-- Заполняется автоматически -->
+            </div>
+        </div>
+        
+        <button class="btn btn-send" onclick="sendToBot()">📤 Отправить расчет</button>
+    </div>
+
+    <script>
+        const tg = window.Telegram?.WebApp;
+        if (tg) {
+            tg.ready();
+            tg.expand();
+        }
+
+        let rowCount = 0;
+        const LETTERS = [];
+
+        // Константы
+        const SHEET_AREA = 2.98;
+        const SHEET_USABLE = 0.85;
+        
+        // Параметры диодов
+        const LED_TYPES = {
+            '3point': { name: '3-х точечные', power: 0.72 },
+            '1point': { name: '1-но точечные', power: 0.24 },
+            '4point': { name: '4-х точечные', power: 0.96 }
+        };
+
+        // Показать/скрыть размеры подложки
+        function toggleSubstrateSize() {
+            const substrateMaterial = document.getElementById('substrateMaterial').value;
+            const sizeSection = document.getElementById('substrateSizeSection');
+            
+            if (substrateMaterial !== 'none') {
+                sizeSection.classList.add('active');
+            } else {
+                sizeSection.classList.remove('active');
+            }
+            
+            updateAll();
+        }
+
+        // Обновление статусов переключателей
+        function updateSwitches() {
+            document.getElementById('ledStatus').textContent = document.getElementById('needLED').checked ? 'Да' : 'Нет';
+            document.getElementById('sideWrapStatus').textContent = document.getElementById('sideWrap').checked ? 'Да' : 'Нет';
+            document.getElementById('faceWrapStatus').textContent = document.getElementById('faceWrap').checked ? 'Да' : 'Нет';
+            
+            document.getElementById('ledTypeSection').style.display = 
+                document.getElementById('needLED').checked ? 'block' : 'none';
+        }
+
+        // Добавление строки
+        function addRow() {
+            rowCount++;
+            const tbody = document.getElementById('tableBody');
+            const row = tbody.insertRow();
+            row.id = `row_${rowCount}`;
+            
+            row.innerHTML = `
+                <td>${rowCount}</td>
+                <td><input type="number" id="width_${rowCount}" value="50" min="5" max="300" oninput="calculateAll()"></td>
+                <td><input type="number" id="height_${rowCount}" value="50" min="5" max="300" oninput="calculateAll()"></td>
+                <td><input type="number" id="qty_${rowCount}" value="1" min="1" max="100" oninput="calculateAll()"></td>
+                <td><input type="number" id="side_${rowCount}" value="50" min="0" max="200" oninput="calculateAll()"></td>
+                <td><button class="btn-delete" onclick="deleteRow(${rowCount})">✕</button></td>
+            `;
+            
+            calculateAll();
+        }
+
+        // Удаление строки
+        function deleteRow(index) {
+            const row = document.getElementById(`row_${index}`);
+            if (row) {
+                row.remove();
+                calculateAll();
+            }
+        }
+
+        // Расчет всех букв
+        function calculateAll() {
+            LETTERS.length = 0;
+            
+            for (let i = 1; i <= rowCount; i++) {
+                const row = document.getElementById(`row_${i}`);
+                if (!row) continue;
+                
+                const width = parseFloat(document.getElementById(`width_${i}`)?.value) || 0;
+                const height = parseFloat(document.getElementById(`height_${i}`)?.value) || 0;
+                const qty = parseInt(document.getElementById(`qty_${i}`)?.value) || 1;
+                const sideHeight = parseFloat(document.getElementById(`side_${i}`)?.value) || 0;
+                
+                if (width === 0 || height === 0) continue;
+                
+                const w = width / 100;
+                const h = height / 100;
+                const maxSize = Math.max(width, height);
+                
+                const kFill = maxSize > 50 ? 0.65 : 0.7;
+                const areaReal = w * h * kFill;
+                const areaRect = ((width + 2) * (height + 2)) / 10000;
+                const perimeter = (w + h) * 2 * 0.7;
+                
+                LETTERS.push({
+                    width,
+                    height,
+                    qty,
+                    sideHeight,
+                    areaReal: areaReal * qty,
+                    areaRect: areaRect * qty,
+                    perimeter: perimeter * qty,
+                    sideArea: perimeter * (sideHeight / 1000) * qty
+                });
+            }
+            
+            updateTotals();
+        }
+
+        // Обновление расчетов
+        function updateAll() {
+            updateSwitches();
+            calculateAll();
+        }
+
+        // Расчет итогов
+        function updateTotals() {
+            const validLetters = LETTERS.filter(l => l && l.width > 0);
+            if (validLetters.length === 0) {
+                document.getElementById('totalsGrid').innerHTML = '<p>Добавьте размеры букв для расчета</p>';
+                return;
+            }
+            
+            const needLED = document.getElementById('needLED').checked;
+            const ledType = document.getElementById('ledType').value;
+            const faceMaterial = document.getElementById('faceMaterial').value;
+            const sideMaterial = document.getElementById('sideMaterial').value;
+            const backMaterial = document.getElementById('backMaterial').value;
+            const substrateMaterial = document.getElementById('substrateMaterial').value;
+            const mountType = document.getElementById('mountType').value;
+            const sideWrap = document.getElementById('sideWrap').checked;
+            const faceWrap = document.getElementById('faceWrap').checked;
+            
+            // Общее количество букв
+            const totalLetters = validLetters.reduce((sum, l) => sum + l.qty, 0);
+            
+            // Площади
+            const totalAreaReal = validLetters.reduce((sum, l) => sum + l.areaReal, 0);
+            const totalAreaRect = validLetters.reduce((sum, l) => sum + l.areaRect, 0);
+            const totalSideArea = validLetters.reduce((sum, l) => sum + l.sideArea, 0);
+            
+            // Общая ширина вывески
+            const totalWidth = validLetters.reduce((sum, l) => sum + (l.width * l.qty), 0);
+            
+            // Расчет труб
+            let totalTubeLength = 0;
+            validLetters.forEach(l => {
+                const maxSize = Math.max(l.width, l.height);
+                
+                let baseTube;
+                if (maxSize >= 50) {
+                    baseTube = (l.width + 20) * l.qty * 2;
+                } else {
+                    baseTube = (l.width + 10) * l.qty * 2;
+                }
+                
+                const additionalTubes = Math.floor(l.width / 100) * l.width * l.qty;
+                totalTubeLength += baseTube + additionalTubes;
+            });
+            
+            // Для крышной установки
+            let roofTubes = 0;
+            if (mountType === 'roof') {
+                const roofTubeCount = Math.floor(totalWidth / 200);
+                roofTubes = roofTubeCount * 200;
+            }
+            
+            let angleLength = 0;
+            if (mountType === 'roof') {
+                angleLength = totalWidth;
+            }
+            
+            const totalTubeWithRoof = totalTubeLength + roofTubes;
+            
+            // Клей
+            const glueTubes = Math.ceil(totalLetters / 2);
+            
+            // Шурупы
+            let totalScrews = 0;
+            validLetters.forEach(l => {
+                const maxSize = Math.max(l.width, l.height);
+                let screwsPerLetter;
+                if (maxSize < 25) screwsPerLetter = 3;
+                else if (maxSize < 50) screwsPerLetter = 5;
+                else if (maxSize < 100) screwsPerLetter = 7;
+                else screwsPerLetter = 10;
+                totalScrews += screwsPerLetter * l.qty;
+            });
+            
+            // Диоды
+            let totalLED = 0;
+            let ledPower = 0;
+            if (needLED) {
+                const ledInfo = LED_TYPES[ledType];
+                ledPower = ledInfo.power;
+                validLetters.forEach(l => {
+                    const maxSize = Math.max(l.width, l.height);
+                    const areaPerLetter = l.areaReal / l.qty;
+                    let ledPerLetter = Math.max(1, Math.ceil(areaPerLetter * 160));
+                    if (maxSize < 30 && ledPerLetter < 5) ledPerLetter = 5;
+                    totalLED += ledPerLetter * l.qty;
+                });
+            }
+            
+            // Блок питания
+            let powerSupply = 'Не нужен';
+            if (needLED && totalLED > 0) {
+                const totalPower = totalLED * ledPower;
+                powerSupply = calculatePowerSupply(totalPower);
+            }
+            
+            // Листы для лицевой части
+            const faceSheets = Math.ceil(totalAreaRect / (SHEET_AREA * SHEET_USABLE));
+            
+            // Листы для бортов
+            const sideSheets = Math.ceil(totalSideArea / (SHEET_AREA * SHEET_USABLE));
+            
+            // Задник
+            const backSheets = backMaterial !== 'none' ? 
+                Math.ceil(totalAreaRect / (SHEET_AREA * SHEET_USABLE)) : 0;
+            
+            // Подложка
+            let substrateSheets = 0;
+            let substrateArea = 0;
+            if (substrateMaterial !== 'none') {
+                const substrateWidth = parseFloat(document.getElementById('substrateWidth').value) || 0;
+                const substrateHeight = parseFloat(document.getElementById('substrateHeight').value) || 0;
+                
+                if (substrateWidth > 0 && substrateHeight > 0) {
+                    substrateArea = (substrateWidth * substrateHeight) / 10000;
+                    substrateSheets = Math.ceil(substrateArea / (SHEET_AREA * SHEET_USABLE));
+                }
+            }
+            
+            // Пленка
+            let filmArea = 0;
+            if (sideWrap) {
+                filmArea += totalSideArea;
+            }
+            if (faceWrap) {
+                filmArea += totalAreaRect;
+            }
+            const filmMeters = filmArea > 0 ? Math.ceil(filmArea * 1.3) : 0;
+            
+            // Провод (2 метра на букву + 5 метров запас)
+            let wireTotal = 0;
+            if (needLED) {
+                wireTotal = (totalLetters * 2) + 5;
+            }
+            
+            const materialNames = {
+                'acrylic': 'Акрил',
+                'pvc': 'ПВХ',
+                'akp': 'АКП',
+                'orglass': 'Оргстекло'
+            };
+            
+            const backNames = {
+                'none': '',
+                'pvc_8mm': 'ПВХ 8мм',
+                'pvc_5mm': 'ПВХ 5мм',
+                'pvc_3mm': 'ПВХ 3мм'
+            };
+            
+            const substrateNames = {
+                'none': '',
+                'pvc': 'ПВХ',
+                'galvanized': 'Оцинковка',
+                'akp': 'АКП'
+            };
+            
+            const totalsHTML = `
+                <div class="total-item">
+                    <div class="total-label">Всего букв</div>
+                    <div class="total-value">${totalLetters} шт</div>
+                </div>
+                ${needLED ? `
+                <div class="total-item">
+                    <div class="total-label">Диоды (${LED_TYPES[ledType].name})</div>
+                    <div class="total-value">${totalLED} шт</div>
+                </div>
+                <div class="total-item">
+                    <div class="total-label">Блок питания</div>
+                    <div class="total-value">${powerSupply}</div>
+                </div>
+                <div class="total-item">
+                    <div class="total-label">Провод</div>
+                    <div class="total-value">${wireTotal} м</div>
+                </div>` : ''}
+                <div class="total-item">
+                    <div class="total-label">${materialNames[faceMaterial]} (лицо)</div>
+                    <div class="total-value">${faceSheets} лист(а)</div>
+                </div>
+                <div class="total-item">
+                    <div class="total-label">${materialNames[sideMaterial]} (борта)</div>
+                    <div class="total-value">${sideSheets} лист(а)</div>
+                </div>
+                ${backMaterial !== 'none' ? `
+                <div class="total-item">
+                    <div class="total-label">Задник (${backNames[backMaterial]})</div>
+                    <div class="total-value">${backSheets} лист(а)</div>
+                </div>` : ''}
+                ${substrateMaterial !== 'none' && substrateArea > 0 ? `
+                <div class="total-item">
+                    <div class="total-label">Подложка (${substrateNames[substrateMaterial]})</div>
+                    <div class="total-value">${substrateSheets} лист(а) (${substrateArea.toFixed(2)} м²)</div>
+                </div>` : ''}
+                <div class="total-item">
+                    <div class="total-label">Профильная труба</div>
+                    <div class="total-value">${totalTubeWithRoof} см (${(totalTubeWithRoof/100).toFixed(1)} м)</div>
+                </div>
+                ${mountType === 'roof' ? `
+                <div class="total-item">
+                    <div class="total-label">Уголок (для крыши)</div>
+                    <div class="total-value">${angleLength} см (${(angleLength/100).toFixed(1)} м)</div>
+                </div>` : ''}
+                <div class="total-item">
+                    <div class="total-label">Клей</div>
+                    <div class="total-value">${glueTubes} тюбик(а)</div>
+                </div>
+                <div class="total-item">
+                    <div class="total-label">Шурупы</div>
+                    <div class="total-value">${totalScrews} шт</div>
+                </div>
+                ${filmMeters > 0 ? `
+                <div class="total-item">
+                    <div class="total-label">Пленка</div>
+                    <div class="total-value">${filmMeters} м²</div>
+                </div>` : ''}
+            `;
+            
+            document.getElementById('totalsGrid').innerHTML = totalsHTML;
+        }
+        
+        // Подбор блока питания
+        function calculatePowerSupply(totalPower) {
+            const powerSupplies = [
+                { watt: 60, name: "60W" },
+                { watt: 100, name: "100W" },
+                { watt: 200, name: "200W" },
+                { watt: 350, name: "350W" },
+                { watt: 400, name: "400W" }
+            ];
+            
+            const requiredWatt = totalPower * 1.2;
+            
+            let selected = powerSupplies[0];
+            for (const ps of powerSupplies) {
+                if (ps.watt >= requiredWatt) {
+                    selected = ps;
+                    break;
+                }
+            }
+            
+            if (requiredWatt > 400) {
+                const count = Math.ceil(requiredWatt / 400);
+                return `${count} × 400W`;
+            }
+            
+            return `1 × ${selected.name}`;
+        }
+
+        // Отправка данных в Telegram
+        function sendToBot() {
+            const validLetters = LETTERS.filter(l => l && l.width > 0);
+            if (validLetters.length === 0) {
+                alert('Добавьте хотя бы один размер буквы!');
+                return;
+            }
+            
+            const data = {
+                settings: {
+                    needLED: document.getElementById('needLED').checked,
+                    ledType: document.getElementById('ledType').value,
+                    faceMaterial: document.getElementById('faceMaterial').value,
+                    sideMaterial: document.getElementById('sideMaterial').value,
+                    backMaterial: document.getElementById('backMaterial').value,
+                    substrateMaterial: document.getElementById('substrateMaterial').value,
+                    substrateWidth: parseFloat(document.getElementById('substrateWidth').value) || 0,
+                    substrateHeight: parseFloat(document.getElementById('substrateHeight').value) || 0,
+                    mountType: document.getElementById('mountType').value,
+                    sideWrap: document.getElementById('sideWrap').checked,
+                    faceWrap: document.getElementById('faceWrap').checked
+                },
+                letters: validLetters
+            };
+            
+            if (tg) {
+                tg.sendData(JSON.stringify(data));
+                tg.close();
+            } else {
+                console.log('Данные для отправки:', data);
+                alert('Данные готовы к отправке');
+            }
+        }
+
+        // Инициализация
+        window.onload = function() {
+            addRow();
+            addRow();
+            addRow();
+            
+            updateSwitches();
+        };
+    </script>
+</body>
+</html>
