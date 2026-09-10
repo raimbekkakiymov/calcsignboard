@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Калькулятор вывески v13.0</title>
+    <title>Калькулятор вывески</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         * {
@@ -192,17 +192,6 @@
             cursor: pointer;
         }
 
-        .btn-send {
-            background: #3498db;
-            color: white;
-            margin-top: 20px;
-            width: 100%;
-        }
-
-        .btn-send:hover {
-            background: #2980b9;
-        }
-
         .totals {
             margin-top: 30px;
             padding: 20px;
@@ -263,7 +252,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>📐 Калькулятор вывески v12.0</h1>
+        <h1>📐 Калькулятор вывески</h1>
         
         <!-- Настройки сверху -->
         <div class="settings-section">
@@ -336,28 +325,6 @@
                         <option value="roof">На крышу</option>
                     </select>
                 </div>
-                
-                <div class="setting-item">
-                    <label>Обклейка бортов:</label>
-                    <div class="switch-container">
-                        <label class="switch">
-                            <input type="checkbox" id="sideWrap" onchange="updateAll()">
-                            <span class="slider"></span>
-                        </label>
-                        <span id="sideWrapStatus">Нет</span>
-                    </div>
-                </div>
-                
-                <div class="setting-item">
-                    <label>Обклейка лицевой части:</label>
-                    <div class="switch-container">
-                        <label class="switch">
-                            <input type="checkbox" id="faceWrap" onchange="updateAll()">
-                            <span class="slider"></span>
-                        </label>
-                        <span id="faceWrapStatus">Нет</span>
-                    </div>
-                </div>
             </div>
             
             <!-- Размеры подложки -->
@@ -390,7 +357,6 @@
                     </tr>
                 </thead>
                 <tbody id="tableBody">
-                    <!-- Строки добавляются динамически -->
                 </tbody>
             </table>
         </div>
@@ -403,24 +369,24 @@
         <div class="totals" id="totalsSection">
             <h3>📊 РАСЧЕТ</h3>
             <div class="total-grid" id="totalsGrid">
-                <!-- Заполняется автоматически -->
             </div>
         </div>
         
+        <!-- Кнопки отправки -->
         <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 20px;">
-    <button onclick="shareWhatsApp()" 
-            style="flex: 1; min-width: 140px; background: #25D366; color: white; padding: 14px 20px; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer;">
-        📱 WhatsApp
-    </button>
-    <button onclick="shareTelegram()" 
-            style="flex: 1; min-width: 140px; background: #0088cc; color: white; padding: 14px 20px; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer;">
-        ✈️ Telegram
-    </button>
-    <button onclick="copyToClipboard()" 
-            style="flex: 1; min-width: 140px; background: #95a5a6; color: white; padding: 14px 20px; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer;">
-        📋 Копировать
-    </button>
-</div>
+            <button onclick="shareWhatsApp()" 
+                    style="flex: 1; min-width: 130px; background: #25D366; color: white; padding: 14px 18px; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer;">
+                📱 WhatsApp
+            </button>
+            <button onclick="shareTelegram()" 
+                    style="flex: 1; min-width: 130px; background: #0088cc; color: white; padding: 14px 18px; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer;">
+                ✈️ Telegram
+            </button>
+            <button onclick="copyToClipboard()" 
+                    style="flex: 1; min-width: 130px; background: #95a5a6; color: white; padding: 14px 18px; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer;">
+                📋 Копировать
+            </button>
+        </div>
     </div>
 
     <script>
@@ -433,16 +399,8 @@
         let rowCount = 0;
         const LETTERS = [];
 
-        // Константы
         const SHEET_AREA = 2.98;
         const SHEET_USABLE = 0.85;
-        
-        // Параметры диодов
-        const LED_TYPES = {
-            '3point': { name: '3-х точечные', power: 0.72 },
-            '1point': { name: '1-но точечные', power: 0.24 },
-            '4point': { name: '4-х точечные', power: 0.96 }
-        };
 
         // Показать/скрыть размеры подложки
         function toggleSubstrateSize() {
@@ -458,12 +416,8 @@
             updateAll();
         }
 
-        // Обновление статусов переключателей
         function updateSwitches() {
             document.getElementById('ledStatus').textContent = document.getElementById('needLED').checked ? 'Да' : 'Нет';
-            document.getElementById('sideWrapStatus').textContent = document.getElementById('sideWrap').checked ? 'Да' : 'Нет';
-            document.getElementById('faceWrapStatus').textContent = document.getElementById('faceWrap').checked ? 'Да' : 'Нет';
-            
             document.getElementById('ledTypeSection').style.display = 
                 document.getElementById('needLED').checked ? 'block' : 'none';
         }
@@ -487,7 +441,6 @@
             calculateAll();
         }
 
-        // Удаление строки
         function deleteRow(index) {
             const row = document.getElementById(`row_${index}`);
             if (row) {
@@ -527,7 +480,6 @@
                     sideHeight,
                     areaReal: areaReal * qty,
                     areaRect: areaRect * qty,
-                    perimeter: perimeter * qty,
                     sideArea: perimeter * (sideHeight / 1000) * qty
                 });
             }
@@ -535,13 +487,12 @@
             updateTotals();
         }
 
-        // Обновление расчетов
         function updateAll() {
             updateSwitches();
             calculateAll();
         }
 
-        // Расчет итогов
+        // Итоги в интерфейсе
         function updateTotals() {
             const validLetters = LETTERS.filter(l => l && l.width > 0);
             if (validLetters.length === 0) {
@@ -553,51 +504,32 @@
             const ledType = document.getElementById('ledType').value;
             const faceMaterial = document.getElementById('faceMaterial').value;
             const sideMaterial = document.getElementById('sideMaterial').value;
-            const backMaterial = document.getElementById('backMaterial').value;
-            const substrateMaterial = document.getElementById('substrateMaterial').value;
-            const mountType = document.getElementById('mountType').value;
-            const sideWrap = document.getElementById('sideWrap').checked;
-            const faceWrap = document.getElementById('faceWrap').checked;
             
-            // Общее количество букв
             const totalLetters = validLetters.reduce((sum, l) => sum + l.qty, 0);
-            
-            // Площади
-            const totalAreaReal = validLetters.reduce((sum, l) => sum + l.areaReal, 0);
             const totalAreaRect = validLetters.reduce((sum, l) => sum + l.areaRect, 0);
             const totalSideArea = validLetters.reduce((sum, l) => sum + l.sideArea, 0);
             
-            // Общая ширина вывески
             const totalWidth = validLetters.reduce((sum, l) => sum + (l.width * l.qty), 0);
             
-            // Расчет труб
+            // Трубы
             let totalTubeLength = 0;
             validLetters.forEach(l => {
                 const maxSize = Math.max(l.width, l.height);
-                
                 let baseTube;
                 if (maxSize >= 50) {
                     baseTube = (l.width + 20) * l.qty * 2;
                 } else {
                     baseTube = (l.width + 10) * l.qty * 2;
                 }
-                
                 const additionalTubes = Math.floor(l.width / 100) * l.width * l.qty;
                 totalTubeLength += baseTube + additionalTubes;
             });
             
-            // Для крышной установки
+            const mountType = document.getElementById('mountType').value;
             let roofTubes = 0;
             if (mountType === 'roof') {
-                const roofTubeCount = Math.floor(totalWidth / 200);
-                roofTubes = roofTubeCount * 200;
+                roofTubes = Math.floor(totalWidth / 200) * 200;
             }
-            
-            let angleLength = 0;
-            if (mountType === 'roof') {
-                angleLength = totalWidth;
-            }
-            
             const totalTubeWithRoof = totalTubeLength + roofTubes;
             
             // Клей
@@ -615,12 +547,10 @@
                 totalScrews += screwsPerLetter * l.qty;
             });
             
-            // Диоды
+            // LED
+            const ledPower = { '3point': 0.72, '1point': 0.24, '4point': 0.96 }[ledType];
             let totalLED = 0;
-            let ledPower = 0;
             if (needLED) {
-                const ledInfo = LED_TYPES[ledType];
-                ledPower = ledInfo.power;
                 validLetters.forEach(l => {
                     const maxSize = Math.max(l.width, l.height);
                     const areaPerLetter = l.areaReal / l.qty;
@@ -634,68 +564,27 @@
             let powerSupply = 'Не нужен';
             if (needLED && totalLED > 0) {
                 const totalPower = totalLED * ledPower;
-                powerSupply = calculatePowerSupply(totalPower);
-            }
-            
-            // Листы для лицевой части
-            const faceSheets = Math.ceil(totalAreaRect / (SHEET_AREA * SHEET_USABLE));
-            
-            // Листы для бортов
-            const sideSheets = Math.ceil(totalSideArea / (SHEET_AREA * SHEET_USABLE));
-            
-            // Задник
-            const backSheets = backMaterial !== 'none' ? 
-                Math.ceil(totalAreaRect / (SHEET_AREA * SHEET_USABLE)) : 0;
-            
-            // Подложка
-            let substrateSheets = 0;
-            let substrateArea = 0;
-            if (substrateMaterial !== 'none') {
-                const substrateWidth = parseFloat(document.getElementById('substrateWidth').value) || 0;
-                const substrateHeight = parseFloat(document.getElementById('substrateHeight').value) || 0;
-                
-                if (substrateWidth > 0 && substrateHeight > 0) {
-                    substrateArea = (substrateWidth * substrateHeight) / 10000;
-                    substrateSheets = Math.ceil(substrateArea / (SHEET_AREA * SHEET_USABLE));
+                const requiredWatt = totalPower * 1.2;
+                const powerSupplies = [60, 100, 200, 350, 400];
+                let selected = powerSupplies[0];
+                for (const w of powerSupplies) {
+                    if (w >= requiredWatt) { selected = w; break; }
+                }
+                if (requiredWatt > 400) {
+                    powerSupply = Math.ceil(requiredWatt / 400) + ' × 400W';
+                } else {
+                    powerSupply = '1 × ' + selected + 'W';
                 }
             }
             
-            // Пленка
-            let filmArea = 0;
-            if (sideWrap) {
-                filmArea += totalSideArea;
-            }
-            if (faceWrap) {
-                filmArea += totalAreaRect;
-            }
-            const filmMeters = filmArea > 0 ? Math.ceil(filmArea * 1.3) : 0;
+            // Листы
+            const faceSheets = Math.ceil(totalAreaRect / (SHEET_AREA * SHEET_USABLE));
+            const sideSheets = Math.ceil(totalSideArea / (SHEET_AREA * SHEET_USABLE));
             
-            // Провод (2 метра на букву + 5 метров запас)
-            let wireTotal = 0;
-            if (needLED) {
-                wireTotal = (totalLetters * 2) + 5;
-            }
+            // Провод
+            const wireTotal = needLED ? (totalLetters * 2) + 5 : 0;
             
-            const materialNames = {
-                'acrylic': 'Акрил',
-                'pvc': 'ПВХ',
-                'akp': 'АКП',
-                'orglass': 'Оргстекло'
-            };
-            
-            const backNames = {
-                'none': '',
-                'pvc_8mm': 'ПВХ 8мм',
-                'pvc_5mm': 'ПВХ 5мм',
-                'pvc_3mm': 'ПВХ 3мм'
-            };
-            
-            const substrateNames = {
-                'none': '',
-                'pvc': 'ПВХ',
-                'galvanized': 'Оцинковка',
-                'akp': 'АКП'
-            };
+            const materialNames = { acrylic: 'Акрил', pvc: 'ПВХ', akp: 'АКП', orglass: 'Оргстекло' };
             
             const totalsHTML = `
                 <div class="total-item">
@@ -704,7 +593,7 @@
                 </div>
                 ${needLED ? `
                 <div class="total-item">
-                    <div class="total-label">Диоды (${LED_TYPES[ledType].name})</div>
+                    <div class="total-label">Диоды</div>
                     <div class="total-value">${totalLED} шт</div>
                 </div>
                 <div class="total-item">
@@ -723,25 +612,10 @@
                     <div class="total-label">${materialNames[sideMaterial]} (борта)</div>
                     <div class="total-value">${sideSheets} лист(а)</div>
                 </div>
-                ${backMaterial !== 'none' ? `
-                <div class="total-item">
-                    <div class="total-label">Задник (${backNames[backMaterial]})</div>
-                    <div class="total-value">${backSheets} лист(а)</div>
-                </div>` : ''}
-                ${substrateMaterial !== 'none' && substrateArea > 0 ? `
-                <div class="total-item">
-                    <div class="total-label">Подложка (${substrateNames[substrateMaterial]})</div>
-                    <div class="total-value">${substrateSheets} лист(а) (${substrateArea.toFixed(2)} м²)</div>
-                </div>` : ''}
                 <div class="total-item">
                     <div class="total-label">Профильная труба</div>
-                    <div class="total-value">${totalTubeWithRoof} см (${(totalTubeWithRoof/100).toFixed(1)} м)</div>
+                    <div class="total-value">${(totalTubeWithRoof/100).toFixed(1)} м</div>
                 </div>
-                ${mountType === 'roof' ? `
-                <div class="total-item">
-                    <div class="total-label">Уголок (для крыши)</div>
-                    <div class="total-value">${angleLength} см (${(angleLength/100).toFixed(1)} м)</div>
-                </div>` : ''}
                 <div class="total-item">
                     <div class="total-label">Клей</div>
                     <div class="total-value">${glueTubes} тюбик(а)</div>
@@ -750,168 +624,196 @@
                     <div class="total-label">Шурупы</div>
                     <div class="total-value">${totalScrews} шт</div>
                 </div>
-                ${filmMeters > 0 ? `
-                <div class="total-item">
-                    <div class="total-label">Пленка</div>
-                    <div class="total-value">${filmMeters} м²</div>
-                </div>` : ''}
             `;
             
             document.getElementById('totalsGrid').innerHTML = totalsHTML;
         }
-        
-        // Подбор блока питания
-        function calculatePowerSupply(totalPower) {
-            const powerSupplies = [
-                { watt: 60, name: "60W" },
-                { watt: 100, name: "100W" },
-                { watt: 200, name: "200W" },
-                { watt: 350, name: "350W" },
-                { watt: 400, name: "400W" }
-            ];
-            
-            const requiredWatt = totalPower * 1.2;
-            
-            let selected = powerSupplies[0];
-            for (const ps of powerSupplies) {
-                if (ps.watt >= requiredWatt) {
-                    selected = ps;
-                    break;
-                }
-            }
-            
-            if (requiredWatt > 400) {
-                const count = Math.ceil(requiredWatt / 400);
-                return `${count} × 400W`;
-            }
-            
-            return `1 × ${selected.name}`;
-        }
 
-        // Отправка данных в Telegram
         // ==================== ОТПРАВКА ОТЧЁТА ====================
 
-// Формируем текст расчёта
-function buildReportText() {
-    const validLetters = LETTERS.filter(l => l && l.width > 0);
-    if (validLetters.length === 0) {
-        alert('Добавьте хотя бы одну букву!');
-        return null;
-    }
+        // Формируем текст расчёта (только материалы)
+        function buildReportText() {
+            const validLetters = LETTERS.filter(l => l && l.width > 0);
+            if (validLetters.length === 0) {
+                alert('Добавьте хотя бы одну букву!');
+                return null;
+            }
 
-    const totalLetters = validLetters.reduce((sum, l) => sum + l.qty, 0);
-    const totalWidth = validLetters.reduce((sum, l) => sum + (l.width * l.qty), 0);
-    const needLED = document.getElementById('needLED').checked;
-    const ledType = document.getElementById('ledType').value;
+            const totalLetters = validLetters.reduce((sum, l) => sum + l.qty, 0);
+            const totalAreaRect = validLetters.reduce((sum, l) => sum + l.areaRect, 0);
+            const totalSideArea = validLetters.reduce((sum, l) => sum + l.sideArea, 0);
+            const totalWidth = validLetters.reduce((sum, l) => sum + (l.width * l.qty), 0);
 
-    // Считаем LED
-    let totalLED = 0;
-    if (needLED) {
-        validLetters.forEach(l => {
-            const area = (l.width / 100) * (l.height / 100);
-            const maxSize = Math.max(l.width, l.height);
-            let ledPerLetter;
-            if (maxSize >= 50) ledPerLetter = Math.ceil(area * 90);
-            else if (maxSize >= 30) ledPerLetter = Math.ceil(area * 60);
-            else ledPerLetter = 5;
-            totalLED += ledPerLetter * l.qty;
-        });
-    }
+            // LED
+            const needLED = document.getElementById('needLED').checked;
+            const ledType = document.getElementById('ledType').value;
+            const ledPower = { '3point': 0.72, '1point': 0.24, '4point': 0.96 }[ledType];
+            const ledNames = { '3point': '3-х точечные', '1point': '1-но точечные', '4point': '4-х точечные' };
 
-    // Названия материалов
-    const faceNames = { acrylic: 'Акрил', pvc: 'ПВХ', akp: 'АКП', orglass: 'Оргстекло' };
-    const sideNames = { acrylic: 'Акрил', pvc: 'ПВХ', akp: 'АКП', orglass: 'Оргстекло' };
-    const backNames = { none: 'Нет', pvc_8mm: 'ПВХ 8мм', pvc_5mm: 'ПВХ 5мм', pvc_3mm: 'ПВХ 3мм' };
-    const subNames = { none: 'Нет', pvc: 'ПВХ', galvanized: 'Оцинковка', akp: 'АКП' };
-    const ledNames = { '3point': '3-х точечные', '1point': '1-но точечные', '4point': '4-х точечные' };
+            let totalLED = 0;
+            if (needLED) {
+                validLetters.forEach(l => {
+                    const maxSize = Math.max(l.width, l.height);
+                    const areaPerLetter = l.areaReal / l.qty;
+                    let ledPerLetter = Math.max(1, Math.ceil(areaPerLetter * 160));
+                    if (maxSize < 30 && ledPerLetter < 5) ledPerLetter = 5;
+                    totalLED += ledPerLetter * l.qty;
+                });
+            }
 
-    let text = "📊 РАСЧЁТ ВЫВЕСКИ\n";
-    text += "━━━━━━━━━━━━━━━━━━\n\n";
-    text += "🔤 Всего букв: " + totalLetters + " шт\n";
-    text += "📏 Общая ширина: " + totalWidth.toFixed(0) + " см\n";
-    text += "📐 Типов размеров: " + validLetters.length + "\n\n";
+            // Блок питания
+            const totalPower = totalLED * ledPower;
+            let powerSupply = 'Не нужен';
+            if (needLED && totalLED > 0) {
+                const requiredWatt = totalPower * 1.2;
+                const powerSupplies = [60, 100, 200, 350, 400];
+                let selected = powerSupplies[0];
+                for (const w of powerSupplies) {
+                    if (w >= requiredWatt) { selected = w; break; }
+                }
+                if (requiredWatt > 400) {
+                    const count = Math.ceil(requiredWatt / 400);
+                    powerSupply = count + ' × 400W';
+                } else {
+                    powerSupply = '1 × ' + selected + 'W';
+                }
+            }
 
-    text += "📋 РАЗМЕРЫ:\n";
-    validLetters.forEach((l, i) => {
-        text += (i + 1) + ") " + l.width + "×" + l.height + " см — " + l.qty + " шт\n";
-    });
+            // Провод
+            const wireTotal = needLED ? (totalLetters * 2) + 5 : 0;
 
-    text += "\n⚙️ МАТЕРИАЛЫ:\n";
-    text += "• Лицо: " + (faceNames[document.getElementById('faceMaterial').value] || '—') + "\n";
-    text += "• Борта: " + (sideNames[document.getElementById('sideMaterial').value] || '—') + "\n";
-    text += "• Задник: " + (backNames[document.getElementById('backMaterial').value] || 'Нет') + "\n";
-    text += "• Подложка: " + (subNames[document.getElementById('substrateMaterial').value] || 'Нет') + "\n";
-    text += "• Установка: " + (document.getElementById('mountType').value === 'roof' ? 'На крышу' : 'На фасад') + "\n";
+            // Материал лица
+            const faceMaterial = document.getElementById('faceMaterial').value;
+            const faceNames = { acrylic: 'Акрил', pvc: 'ПВХ', akp: 'АКП', orglass: 'Оргстекло' };
+            const faceSheets = Math.ceil(totalAreaRect / (SHEET_AREA * SHEET_USABLE));
 
-    if (needLED) {
-        text += "\n💡 ЭЛЕКТРИКА:\n";
-        text += "• Диоды: " + (ledNames[ledType] || '—') + "\n";
-        text += "• LED модулей: " + totalLED + " шт\n";
-        text += "• Мощность: " + (totalLED * 0.72).toFixed(1) + " Вт\n";
-    }
+            // Материал бортов
+            const sideMaterial = document.getElementById('sideMaterial').value;
+            const sideNames = { acrylic: 'Акрил', pvc: 'ПВХ', akp: 'АКП', orglass: 'Оргстекло' };
+            const sideSheets = Math.ceil(totalSideArea / (SHEET_AREA * SHEET_USABLE));
 
-    text += "\n━━━━━━━━━━━━━━━━━━\n";
-    text += "Создано в калькуляторе вывесок";
+            // Труба
+            let totalTubeLength = 0;
+            validLetters.forEach(l => {
+                const maxSize = Math.max(l.width, l.height);
+                let baseTube;
+                if (maxSize >= 50) {
+                    baseTube = (l.width + 20) * l.qty * 2;
+                } else {
+                    baseTube = (l.width + 10) * l.qty * 2;
+                }
+                const additionalTubes = Math.floor(l.width / 100) * l.width * l.qty;
+                totalTubeLength += baseTube + additionalTubes;
+            });
 
-    return text;
-}
+            const mountType = document.getElementById('mountType').value;
+            let roofTubes = 0;
+            if (mountType === 'roof') {
+                roofTubes = Math.floor(totalWidth / 200) * 200;
+            }
+            const totalTubeWithRoof = totalTubeLength + roofTubes;
+            const totalTubeMeters = (totalTubeWithRoof / 100).toFixed(1);
 
-// Поделиться в WhatsApp
-function shareWhatsApp() {
-    const text = buildReportText();
-    if (!text) return;
-    const url = "https://wa.me/?text=" + encodeURIComponent(text);
-    window.open(url, '_blank');
-}
+            // Клей (1 тюбик на 2 буквы)
+            const glueTubes = Math.ceil(totalLetters / 2);
 
-// Поделиться в Telegram
-function shareTelegram() {
-    const text = buildReportText();
-    if (!text) return;
-    const url = "https://t.me/share/url?url=" +
-                encodeURIComponent("Расчёт вывески") +
-                "&text=" + encodeURIComponent(text);
-    window.open(url, '_blank');
-}
+            // Шурупы
+            let totalScrews = 0;
+            validLetters.forEach(l => {
+                const maxSize = Math.max(l.width, l.height);
+                let screwsPerLetter;
+                if (maxSize < 25) screwsPerLetter = 3;
+                else if (maxSize < 50) screwsPerLetter = 5;
+                else if (maxSize < 100) screwsPerLetter = 7;
+                else screwsPerLetter = 10;
+                totalScrews += screwsPerLetter * l.qty;
+            });
 
-// Копировать в буфер
-function copyToClipboard() {
-    const text = buildReportText();
-    if (!text) return;
+            // ==================== ФОРМИРУЕМ ТЕКСТ ====================
+            let text = "📊 РАСЧЁТ ВЫВЕСКИ\n";
+            text += "━━━━━━━━━━━━━━━━━━\n\n";
 
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(text).then(() => {
-            alert('✅ Расчёт скопирован в буфер обмена!');
-        }).catch(() => {
-            fallbackCopy(text);
-        });
-    } else {
-        fallbackCopy(text);
-    }
-}
+            text += "🔤 Всего букв: " + totalLetters + " шт\n";
 
-function fallbackCopy(text) {
-    const textarea = document.createElement('textarea');
-    textarea.value = text;
-    textarea.style.position = 'fixed';
-    textarea.style.opacity = '0';
-    document.body.appendChild(textarea);
-    textarea.select();
-    try {
-        document.execCommand('copy');
-        alert('✅ Расчёт скопирован!');
-    } catch (e) {
-        alert('❌ Не удалось скопировать');
-    }
-    document.body.removeChild(textarea);
-}
+            if (needLED) {
+                text += "\n💡 СВЕТ:\n";
+                text += "• Диоды " + (ledNames[ledType] || '—') + ": " + totalLED + " шт\n";
+                text += "• Блок питания: " + powerSupply + " (" + totalPower.toFixed(1) + " Вт)\n";
+                text += "• Провод: " + wireTotal + " м\n";
+            } else {
+                text += "\n💡 Свет: без подсветки\n";
+            }
+
+            text += "\n📦 ЛИСТОВЫЕ МАТЕРИАЛЫ:\n";
+            text += "• Лицо (" + (faceNames[faceMaterial] || '—') + "): " + faceSheets + " лист.\n";
+            text += "• Борта (" + (sideNames[sideMaterial] || '—') + "): " + sideSheets + " лист.\n";
+
+            text += "\n🔩 МЕТАЛЛ И КРЕПЁЖ:\n";
+            text += "• Профильная труба: " + totalTubeMeters + " м\n";
+            text += "• Шурупы: " + totalScrews + " шт\n";
+            text += "• Клей: " + glueTubes + " тюбик.\n";
+
+            text += "\n━━━━━━━━━━━━━━━━━━\n";
+            text += "Калькулятор вывесок";
+
+            return text;
+        }
+
+        // Поделиться в WhatsApp
+        function shareWhatsApp() {
+            const text = buildReportText();
+            if (!text) return;
+            const url = "https://wa.me/?text=" + encodeURIComponent(text);
+            window.open(url, '_blank');
+        }
+
+        // Поделиться в Telegram
+        function shareTelegram() {
+            const text = buildReportText();
+            if (!text) return;
+            const url = "https://t.me/share/url?url=" +
+                        encodeURIComponent("Расчёт вывески") +
+                        "&text=" + encodeURIComponent(text);
+            window.open(url, '_blank');
+        }
+
+        // Копировать в буфер
+        function copyToClipboard() {
+            const text = buildReportText();
+            if (!text) return;
+
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(() => {
+                    alert('✅ Расчёт скопирован в буфер обмена!');
+                }).catch(() => {
+                    fallbackCopy(text);
+                });
+            } else {
+                fallbackCopy(text);
+            }
+        }
+
+        function fallbackCopy(text) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.select();
+            try {
+                document.execCommand('copy');
+                alert('✅ Расчёт скопирован!');
+            } catch (e) {
+                alert('❌ Не удалось скопировать');
+            }
+            document.body.removeChild(textarea);
+        }
 
         // Инициализация
         window.onload = function() {
             addRow();
             addRow();
             addRow();
-            
             updateSwitches();
         };
     </script>
