@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Калькулятор вывески v13.0</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -408,7 +407,20 @@
             </div>
         </div>
         
-        <button class="btn btn-send" onclick="sendToBot()">📤 Отправить расчет</button>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 20px;">
+    <button onclick="shareWhatsApp()" 
+            style="flex: 1; min-width: 140px; background: #25D366; color: white; padding: 14px 20px; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer;">
+        📱 WhatsApp
+    </button>
+    <button onclick="shareTelegram()" 
+            style="flex: 1; min-width: 140px; background: #0088cc; color: white; padding: 14px 20px; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer;">
+        ✈️ Telegram
+    </button>
+    <button onclick="copyToClipboard()" 
+            style="flex: 1; min-width: 140px; background: #95a5a6; color: white; padding: 14px 20px; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer;">
+        📋 Копировать
+    </button>
+</div>
     </div>
 
     <script>
@@ -777,44 +789,121 @@
         }
 
         // Отправка данных в Telegram
-        function sendToBot() {
+        // ==================== ОТПРАВКА ОТЧЁТА ====================
+
+// Формируем текст расчёта
+function buildReportText() {
     const validLetters = LETTERS.filter(l => l && l.width > 0);
     if (validLetters.length === 0) {
-        alert('Добавьте хотя бы один размер буквы!');
-        return;
+        alert('Добавьте хотя бы одну букву!');
+        return null;
     }
 
-    // Генерируем Excel-файл
-    const workbook = generateWorkbook();
-    const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'base64' });
-    const filename = `Расчет_вывески_${new Date().toISOString().slice(0,10)}.xlsx`;
+    const totalLetters = validLetters.reduce((sum, l) => sum + l.qty, 0);
+    const totalWidth = validLetters.reduce((sum, l) => sum + (l.width * l.qty), 0);
+    const needLED = document.getElementById('needLED').checked;
+    const ledType = document.getElementById('ledType').value;
 
-    if (tg) {
-        const data = {
-            action: 'excel',
-            filename: filename,
-            file: wbout,
-            settings: {
-                needLED: document.getElementById('needLED').checked,
-                ledType: document.getElementById('ledType').value,
-                faceMaterial: document.getElementById('faceMaterial').value,
-                sideMaterial: document.getElementById('sideMaterial').value,
-                backMaterial: document.getElementById('backMaterial').value,
-                substrateMaterial: document.getElementById('substrateMaterial').value,
-                substrateWidth: parseFloat(document.getElementById('substrateWidth').value) || 0,
-                substrateHeight: parseFloat(document.getElementById('substrateHeight').value) || 0,
-                mountType: document.getElementById('mountType').value,
-                sideWrap: document.getElementById('sideWrap').checked,
-                faceWrap: document.getElementById('faceWrap').checked
-            },
-            letters: validLetters
-        };
-        tg.sendData(JSON.stringify(data));
-        tg.close();
+    // Считаем LED
+    let totalLED = 0;
+    if (needLED) {
+        validLetters.forEach(l => {
+            const area = (l.width / 100) * (l.height / 100);
+            const maxSize = Math.max(l.width, l.height);
+            let ledPerLetter;
+            if (maxSize >= 50) ledPerLetter = Math.ceil(area * 90);
+            else if (maxSize >= 30) ledPerLetter = Math.ceil(area * 60);
+            else ledPerLetter = 5;
+            totalLED += ledPerLetter * l.qty;
+        });
+    }
+
+    // Названия материалов
+    const faceNames = { acrylic: 'Акрил', pvc: 'ПВХ', akp: 'АКП', orglass: 'Оргстекло' };
+    const sideNames = { acrylic: 'Акрил', pvc: 'ПВХ', akp: 'АКП', orglass: 'Оргстекло' };
+    const backNames = { none: 'Нет', pvc_8mm: 'ПВХ 8мм', pvc_5mm: 'ПВХ 5мм', pvc_3mm: 'ПВХ 3мм' };
+    const subNames = { none: 'Нет', pvc: 'ПВХ', galvanized: 'Оцинковка', akp: 'АКП' };
+    const ledNames = { '3point': '3-х точечные', '1point': '1-но точечные', '4point': '4-х точечные' };
+
+    let text = "📊 РАСЧЁТ ВЫВЕСКИ\n";
+    text += "━━━━━━━━━━━━━━━━━━\n\n";
+    text += "🔤 Всего букв: " + totalLetters + " шт\n";
+    text += "📏 Общая ширина: " + totalWidth.toFixed(0) + " см\n";
+    text += "📐 Типов размеров: " + validLetters.length + "\n\n";
+
+    text += "📋 РАЗМЕРЫ:\n";
+    validLetters.forEach((l, i) => {
+        text += (i + 1) + ") " + l.width + "×" + l.height + " см — " + l.qty + " шт\n";
+    });
+
+    text += "\n⚙️ МАТЕРИАЛЫ:\n";
+    text += "• Лицо: " + (faceNames[document.getElementById('faceMaterial').value] || '—') + "\n";
+    text += "• Борта: " + (sideNames[document.getElementById('sideMaterial').value] || '—') + "\n";
+    text += "• Задник: " + (backNames[document.getElementById('backMaterial').value] || 'Нет') + "\n";
+    text += "• Подложка: " + (subNames[document.getElementById('substrateMaterial').value] || 'Нет') + "\n";
+    text += "• Установка: " + (document.getElementById('mountType').value === 'roof' ? 'На крышу' : 'На фасад') + "\n";
+
+    if (needLED) {
+        text += "\n💡 ЭЛЕКТРИКА:\n";
+        text += "• Диоды: " + (ledNames[ledType] || '—') + "\n";
+        text += "• LED модулей: " + totalLED + " шт\n";
+        text += "• Мощность: " + (totalLED * 0.72).toFixed(1) + " Вт\n";
+    }
+
+    text += "\n━━━━━━━━━━━━━━━━━━\n";
+    text += "Создано в калькуляторе вывесок";
+
+    return text;
+}
+
+// Поделиться в WhatsApp
+function shareWhatsApp() {
+    const text = buildReportText();
+    if (!text) return;
+    const url = "https://wa.me/?text=" + encodeURIComponent(text);
+    window.open(url, '_blank');
+}
+
+// Поделиться в Telegram
+function shareTelegram() {
+    const text = buildReportText();
+    if (!text) return;
+    const url = "https://t.me/share/url?url=" +
+                encodeURIComponent("Расчёт вывески") +
+                "&text=" + encodeURIComponent(text);
+    window.open(url, '_blank');
+}
+
+// Копировать в буфер
+function copyToClipboard() {
+    const text = buildReportText();
+    if (!text) return;
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+            alert('✅ Расчёт скопирован в буфер обмена!');
+        }).catch(() => {
+            fallbackCopy(text);
+        });
     } else {
-        XLSX.writeFile(workbook, filename);
-        alert('Файл сформирован (режим разработки)');
+        fallbackCopy(text);
     }
+}
+
+function fallbackCopy(text) {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    try {
+        document.execCommand('copy');
+        alert('✅ Расчёт скопирован!');
+    } catch (e) {
+        alert('❌ Не удалось скопировать');
+    }
+    document.body.removeChild(textarea);
 }
 
         // Инициализация
