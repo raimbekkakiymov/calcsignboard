@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Калькулятор вывески v12.0</title>
+    <title>Калькулятор вывески v13.0</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -777,37 +778,44 @@
 
         // Отправка данных в Telegram
         function sendToBot() {
-            const validLetters = LETTERS.filter(l => l && l.width > 0);
-            if (validLetters.length === 0) {
-                alert('Добавьте хотя бы один размер буквы!');
-                return;
-            }
-            
-            const data = {
-                settings: {
-                    needLED: document.getElementById('needLED').checked,
-                    ledType: document.getElementById('ledType').value,
-                    faceMaterial: document.getElementById('faceMaterial').value,
-                    sideMaterial: document.getElementById('sideMaterial').value,
-                    backMaterial: document.getElementById('backMaterial').value,
-                    substrateMaterial: document.getElementById('substrateMaterial').value,
-                    substrateWidth: parseFloat(document.getElementById('substrateWidth').value) || 0,
-                    substrateHeight: parseFloat(document.getElementById('substrateHeight').value) || 0,
-                    mountType: document.getElementById('mountType').value,
-                    sideWrap: document.getElementById('sideWrap').checked,
-                    faceWrap: document.getElementById('faceWrap').checked
-                },
-                letters: validLetters
-            };
-            
-            if (tg) {
-                tg.sendData(JSON.stringify(data));
-                tg.close();
-            } else {
-                console.log('Данные для отправки:', data);
-                alert('Данные готовы к отправке');
-            }
-        }
+    const validLetters = LETTERS.filter(l => l && l.width > 0);
+    if (validLetters.length === 0) {
+        alert('Добавьте хотя бы один размер буквы!');
+        return;
+    }
+
+    // Генерируем Excel-файл
+    const workbook = generateWorkbook();
+    const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'base64' });
+    const filename = `Расчет_вывески_${new Date().toISOString().slice(0,10)}.xlsx`;
+
+    if (tg) {
+        const data = {
+            action: 'excel',
+            filename: filename,
+            file: wbout,
+            settings: {
+                needLED: document.getElementById('needLED').checked,
+                ledType: document.getElementById('ledType').value,
+                faceMaterial: document.getElementById('faceMaterial').value,
+                sideMaterial: document.getElementById('sideMaterial').value,
+                backMaterial: document.getElementById('backMaterial').value,
+                substrateMaterial: document.getElementById('substrateMaterial').value,
+                substrateWidth: parseFloat(document.getElementById('substrateWidth').value) || 0,
+                substrateHeight: parseFloat(document.getElementById('substrateHeight').value) || 0,
+                mountType: document.getElementById('mountType').value,
+                sideWrap: document.getElementById('sideWrap').checked,
+                faceWrap: document.getElementById('faceWrap').checked
+            },
+            letters: validLetters
+        };
+        tg.sendData(JSON.stringify(data));
+        tg.close();
+    } else {
+        XLSX.writeFile(workbook, filename);
+        alert('Файл сформирован (режим разработки)');
+    }
+}
 
         // Инициализация
         window.onload = function() {
