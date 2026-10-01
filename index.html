@@ -278,6 +278,15 @@
                     </select>
                 </div>
                 
+                <div class="setting-item" id="letterThicknessSection">
+                    <label>Жирность буквы:</label>
+                    <select id="letterThickness" onchange="updateAll()">
+                        <option value="thin">Узкие (до 40 мм)</option>
+                        <option value="medium" selected>Средние (40-80 мм)</option>
+                        <option value="thick">Жирные (от 80 мм)</option>
+                    </select>
+                </div>
+                
                 <div class="setting-item">
                     <label>Материал лицевой части:</label>
                     <select id="faceMaterial" onchange="updateAll()">
@@ -402,6 +411,55 @@
         const SHEET_AREA = 2.98;
         const SHEET_USABLE = 0.85;
 
+        // ==================== НОРМЫ LED ====================
+        // Плотность LED по типу модуля (LED на м² площади буквы)
+        // 4-х точечные: 26 шт на 50×50 см → 160 LED/м²
+        // 3-х точечные: 34 шт на 50×50 см → 209 LED/м²
+        // 1-но точечные: ~350 LED/м² (в 1.5 раза больше 3-х точечных)
+        const LED_DENSITY = {
+            '3point': 209,   // 3-х точечные
+            '1point': 350,   // 1-но точечные
+            '4point': 160    // 4-х точечные
+        };
+
+        // Коэффициент жирности буквы
+        // Узкие — в 2 раза меньше LED
+        const THICKNESS_MULTIPLIER = {
+            'thin': 0.5,     // Узкие (до 40 мм)
+            'medium': 1.0,   // Средние (40-80 мм)
+            'thick': 1.0     // Жирные (от 80 мм) — плотность на м² та же, но площадь больше
+        };
+
+        // Мощность одного LED-модуля (Вт)
+        const LED_POWER = {
+            '3point': 0.72,
+            '1point': 0.24,
+            '4point': 0.96
+        };
+
+        // Названия LED
+        const LED_NAMES = {
+            '3point': '3-х точечные',
+            '1point': '1-но точечные',
+            '4point': '4-х точечные'
+        };
+
+        // Функция расчёта LED для одной буквы
+        function calcLedPerLetter(letter, ledType, thickness) {
+            const maxSize = Math.max(letter.width, letter.height);
+            const areaPerLetter = letter.areaReal / letter.qty; // в м²
+
+            const density = LED_DENSITY[ledType] || 160;
+            const thicknessCoef = THICKNESS_MULTIPLIER[thickness] || 1.0;
+
+            let ledCount = Math.ceil(areaPerLetter * density * thicknessCoef);
+
+            // Минимум для мелких букв
+            if (maxSize < 30 && ledCount < 5) ledCount = 5;
+
+            return ledCount;
+        }
+
         // Показать/скрыть размеры подложки
         function toggleSubstrateSize() {
             const substrateMaterial = document.getElementById('substrateMaterial').value;
@@ -417,9 +475,10 @@
         }
 
         function updateSwitches() {
-            document.getElementById('ledStatus').textContent = document.getElementById('needLED').checked ? 'Да' : 'Нет';
-            document.getElementById('ledTypeSection').style.display = 
-                document.getElementById('needLED').checked ? 'block' : 'none';
+            const needLED = document.getElementById('needLED').checked;
+            document.getElementById('ledStatus').textContent = needLED ? 'Да' : 'Нет';
+            document.getElementById('ledTypeSection').style.display = needLED ? 'block' : 'none';
+            document.getElementById('letterThicknessSection').style.display = needLED ? 'block' : 'none';
         }
 
         // Добавление строки
@@ -502,6 +561,7 @@
             
             const needLED = document.getElementById('needLED').checked;
             const ledType = document.getElementById('ledType').value;
+            const thickness = document.getElementById('letterThickness').value;
             const faceMaterial = document.getElementById('faceMaterial').value;
             const sideMaterial = document.getElementById('sideMaterial').value;
             
@@ -547,16 +607,12 @@
                 totalScrews += screwsPerLetter * l.qty;
             });
             
-            // LED
-            const ledPower = { '3point': 0.72, '1point': 0.24, '4point': 0.96 }[ledType];
+            // LED — обновлённый расчёт
+            const ledPower = LED_POWER[ledType] || 0.72;
             let totalLED = 0;
             if (needLED) {
                 validLetters.forEach(l => {
-                    const maxSize = Math.max(l.width, l.height);
-                    const areaPerLetter = l.areaReal / l.qty;
-                    let ledPerLetter = Math.max(1, Math.ceil(areaPerLetter * 160));
-                    if (maxSize < 30 && ledPerLetter < 5) ledPerLetter = 5;
-                    totalLED += ledPerLetter * l.qty;
+                    totalLED += calcLedPerLetter(l, ledType, thickness) * l.qty;
                 });
             }
             
@@ -593,7 +649,7 @@
                 </div>
                 ${needLED ? `
                 <div class="total-item">
-                    <div class="total-label">Диоды</div>
+                    <div class="total-label">Диоды (${LED_NAMES[ledType]})</div>
                     <div class="total-value">${totalLED} шт</div>
                 </div>
                 <div class="total-item">
@@ -631,7 +687,6 @@
 
         // ==================== ОТПРАВКА ОТЧЁТА ====================
 
-        // Формируем текст расчёта (только материалы)
         function buildReportText() {
             const validLetters = LETTERS.filter(l => l && l.width > 0);
             if (validLetters.length === 0) {
@@ -647,17 +702,13 @@
             // LED
             const needLED = document.getElementById('needLED').checked;
             const ledType = document.getElementById('ledType').value;
-            const ledPower = { '3point': 0.72, '1point': 0.24, '4point': 0.96 }[ledType];
-            const ledNames = { '3point': '3-х точечные', '1point': '1-но точечные', '4point': '4-х точечные' };
+            const thickness = document.getElementById('letterThickness').value;
+            const ledPower = LED_POWER[ledType] || 0.72;
 
             let totalLED = 0;
             if (needLED) {
                 validLetters.forEach(l => {
-                    const maxSize = Math.max(l.width, l.height);
-                    const areaPerLetter = l.areaReal / l.qty;
-                    let ledPerLetter = Math.max(1, Math.ceil(areaPerLetter * 160));
-                    if (maxSize < 30 && ledPerLetter < 5) ledPerLetter = 5;
-                    totalLED += ledPerLetter * l.qty;
+                    totalLED += calcLedPerLetter(l, ledType, thickness) * l.qty;
                 });
             }
 
@@ -672,8 +723,7 @@
                     if (w >= requiredWatt) { selected = w; break; }
                 }
                 if (requiredWatt > 400) {
-                    const count = Math.ceil(requiredWatt / 400);
-                    powerSupply = count + ' × 400W';
+                    powerSupply = Math.ceil(requiredWatt / 400) + ' × 400W';
                 } else {
                     powerSupply = '1 × ' + selected + 'W';
                 }
@@ -689,7 +739,6 @@
 
             // Материал бортов
             const sideMaterial = document.getElementById('sideMaterial').value;
-            const sideNames = { acrylic: 'Акрил', pvc: 'ПВХ', akp: 'АКП', orglass: 'Оргстекло' };
             const sideSheets = Math.ceil(totalSideArea / (SHEET_AREA * SHEET_USABLE));
 
             // Труба
@@ -714,7 +763,7 @@
             const totalTubeWithRoof = totalTubeLength + roofTubes;
             const totalTubeMeters = (totalTubeWithRoof / 100).toFixed(1);
 
-            // Клей (1 тюбик на 2 буквы)
+            // Клей
             const glueTubes = Math.ceil(totalLetters / 2);
 
             // Шурупы
@@ -729,6 +778,8 @@
                 totalScrews += screwsPerLetter * l.qty;
             });
 
+            const thicknessNames = { thin: 'узкие', medium: 'средние', thick: 'жирные' };
+
             // ==================== ФОРМИРУЕМ ТЕКСТ ====================
             let text = "📊 РАСЧЁТ ВЫВЕСКИ\n";
             text += "━━━━━━━━━━━━━━━━━━\n\n";
@@ -737,7 +788,7 @@
 
             if (needLED) {
                 text += "\n💡 СВЕТ:\n";
-                text += "• Диоды " + (ledNames[ledType] || '—') + ": " + totalLED + " шт\n";
+                text += "• Диоды " + LED_NAMES[ledType] + ": " + totalLED + " шт\n";
                 text += "• Блок питания: " + powerSupply + " (" + totalPower.toFixed(1) + " Вт)\n";
                 text += "• Провод: " + wireTotal + " м\n";
             } else {
@@ -746,7 +797,7 @@
 
             text += "\n📦 ЛИСТОВЫЕ МАТЕРИАЛЫ:\n";
             text += "• Лицо (" + (faceNames[faceMaterial] || '—') + "): " + faceSheets + " лист.\n";
-            text += "• Борта (" + (sideNames[sideMaterial] || '—') + "): " + sideSheets + " лист.\n";
+            text += "• Борта (" + (faceNames[sideMaterial] || '—') + "): " + sideSheets + " лист.\n";
 
             text += "\n🔩 МЕТАЛЛ И КРЕПЁЖ:\n";
             text += "• Профильная труба: " + totalTubeMeters + " м\n";
@@ -759,7 +810,6 @@
             return text;
         }
 
-        // Поделиться в WhatsApp
         function shareWhatsApp() {
             const text = buildReportText();
             if (!text) return;
@@ -767,7 +817,6 @@
             window.open(url, '_blank');
         }
 
-        // Поделиться в Telegram
         function shareTelegram() {
             const text = buildReportText();
             if (!text) return;
@@ -777,7 +826,6 @@
             window.open(url, '_blank');
         }
 
-        // Копировать в буфер
         function copyToClipboard() {
             const text = buildReportText();
             if (!text) return;
